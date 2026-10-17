@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIYA — The Ambient Spatial Intelligence</title>
+  <link rel="icon" type="image/svg+xml" href="./siya-mark.svg">
+  <meta name="description" content="SIYA is an illustrative ambient-computing product concept. This page is a design preview; it does not accept orders or payments.">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- GSAP & ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  <!-- Three.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['"Space Grotesk"', 'sans-serif'],
+          },
+          colors: {
+            obsidian: '#06070a',
+            surface: '#0d1017',
+            card: '#121622',
+            tealGlow: '#00f5d4',
+            violetGlow: '#7b2cbf',
+            electricCyan: '#00b4d8',
+          },
+          animation: {
+            'spin-slow': 'spin 20s linear infinite',
+            'float-slow': 'float 6s ease-in-out infinite',
+            'pulse-glow': 'pulseGlow 4s ease-in-out infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-14px)' },
+            },
+            pulseGlow: {
+              '0%, 100%': { opacity: '0.4', transform: 'scale(1)' },
+              '50%': { opacity: '0.7', transform: 'scale(1.08)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Base Reset & Custom Aesthetics */
+    * {
+      box-sizing: border-box;
+      outline-color: #00f5d4;
+    }
+    body {
+      background-color: #06070a;
+      color: #f1f5f9;
+      overflow-x: hidden;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+
+    /* 3D Perspective Contexts */
+    .perspective-container {
+      perspective: 1200px;
+    }
+    .preserve-3d {
+      transform-style: preserve-3d;
+    }
+    
+    /* 3D Flip Card */
+    .flip-card-inner {
+      transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+      transform-style: preserve-3d;
+    }
+    .flip-card:hover .flip-card-inner,
+    .flip-card.flipped .flip-card-inner {
+      transform: rotateY(180deg);
+    }
+    .flip-card-front, .flip-card-back {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .flip-card-back {
+      transform: rotateY(180deg);
+    }
+
+    /* Smooth Backdrop Glass */
+    .glass-panel {
+      background: rgba(18, 22, 34, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-glow {
+      box-shadow: 0 0 35px -5px rgba(0, 245, 212, 0.15);
+    }
+    
+    /* Gradient text utility */
+    .gradient-title {
+      background: linear-gradient(135deg, #ffffff 30%, #a5b4fc 70%, #00f5d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .gradient-accent {
+      background: linear-gradient(135deg, #00f5d4 0%, #7b2cbf 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Noise Texture Overlay */
+    .bg-noise {
+      background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 0);
+      background-size: 24px 24px;
+    }
+
+    /* Interactive Tilt Cards */
+    .tilt-card {
+      transform-style: preserve-3d;
+      transition: transform 0.15s ease-out, box-shadow 0.3s ease;
+      will-change: transform;
+    }
+
+    .hero-ambient-fallback {
+      background: radial-gradient(ellipse at 76% 42%, rgba(0,245,212,.11), transparent 30%),
+                  radial-gradient(ellipse at 86% 58%, rgba(123,44,191,.22), transparent 38%),
+                  linear-gradient(115deg, #06070a 0%, #0c101b 62%, #06070a 100%);
+    }
+    .showcase-ambient-fallback {
+      background: radial-gradient(circle at 64% 38%, rgba(0,245,212,.20), transparent 24%),
+                  radial-gradient(ellipse at 63% 42%, #252b37 0%, #111621 40%, #06070a 78%);
+    }
+
+    .concept-dialog {
+      width: min(92vw, 32rem);
+      max-width: none;
+      padding: 0;
+      border: 0;
+      color: #f1f5f9;
+      background: transparent;
+    }
+    .concept-dialog::backdrop {
+      background: rgba(2, 4, 9, 0.82);
+      backdrop-filter: blur(8px);
+    }
+
+    /* Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="selection:bg-tealGlow selection:text-obsidian bg-noise">
+
+  <!-- NAVIGATION BAR -->
+  <header class="fixed top-0 left-0 w-full z-50 transition-all duration-300" id="navbar">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        <!-- Logo -->
+        <a href="#hero" class="flex items-center gap-3 group focus-visible:ring-2 focus-visible:ring-tealGlow rounded-lg p-1">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-tealGlow to-violetGlow p-[1px] transition-transform group-hover:scale-105 duration-300">
+            <div class="w-full h-full bg-obsidian rounded-xl flex items-center justify-center">
+              <span class="font-display font-black text-xl text-tealGlow tracking-tighter">S</span>
+            </div>
+          </div>
+          <div class="flex flex-col">
+            <span class="font-display font-extrabold text-xl tracking-wider text-white">SIYA</span>
+            <span class="text-[9px] uppercase tracking-widest text-tealGlow font-semibold -mt-1">Spatial Core</span>
+          </div>
+        </a>
+
+        <!-- Desktop Navigation Links -->
+        <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
+          <a href="#about" class="hover:text-tealGlow transition-colors py-1">Philosophy</a>
+          <a href="#features" class="hover:text-tealGlow transition-colors py-1">Neural Engine</a>
+          <a href="#showcase" class="hover:text-tealGlow transition-colors py-1">Physical Form</a>
+          <a href="#architecture" class="hover:text-tealGlow transition-colors py-1">Architecture</a>
+          <a href="#pricing" class="hover:text-tealGlow transition-colors py-1">Reserve</a>
+        </nav>
+
+        <!-- CTA & Mobile Trigger -->
+        <div class="flex items-center gap-4">
+          <a href="#pricing" class="magnetic-btn hidden sm:inline-flex relative items-center justify-center px-6 py-2.5 rounded-full text-xs uppercase tracking-widest font-bold text-obsidian bg-tealGlow hover:bg-white hover:shadow-[0_0_25px_rgba(0,245,212,0.6)] transition-all duration-300">
+            <span class="relative z-10 flex items-center gap-2">
+              Reserve Batch 01
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </span>
+          </a>
+
+          <!-- Mobile Hamburger Toggle -->
+          <button id="mobileMenuBtn" aria-label="Toggle navigation menu" aria-expanded="false" class="md:hidden p-2 rounded-xl glass-panel text-white hover:text-tealGlow focus:outline-none focus-visible:ring-2 focus-visible:ring-tealGlow">
+            <svg id="menuIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+            <svg id="closeIcon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Drawer Menu -->
+    <div id="mobileMenu" class="md:hidden hidden px-6 pt-4 pb-8 glass-panel border-b border-white/10 mx-3 rounded-2xl mt-2 transition-all shadow-2xl">
+      <div class="flex flex-col gap-4 text-base font-medium text-slate-200">
+        <a href="#about" class="mobile-link py-2 border-b border-white/5 hover:text-tealGlow">Philosophy</a>
+        <a href="#features" class="mobile-link py-2 border-b border-white/5 hover:text-tealGlow">Neural Engine</a>
+        <a href="#showcase" class="mobile-link py-2 border-b border-white/5 hover:text-tealGlow">Physical Form</a>
+        <a href="#architecture" class="mobile-link py-2 border-b border-white/5 hover:text-tealGlow">Architecture</a>
+        <a href="#pricing" class="mobile-link py-2 border-b border-white/5 hover:text-tealGlow">Reserve Unit</a>
+        <a href="#pricing" class="mobile-link text-center mt-3 py-3 rounded-xl bg-tealGlow text-obsidian font-bold text-sm tracking-wider uppercase">Order SIYA</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ==============================================
+         SECTION 1: HERO SECTION
+         Contains Photo #1 (with dark overlay) + Live Three.js 3D Canvas
+    =============================================== -->
+    <section id="hero" class="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16 lg:py-0">
+      
+      <!-- PHOTO #1 BACKGROUND: Atmospheric High Tech Architecture/Studio -->
+      <div class="absolute inset-0 z-0">
+        <div aria-hidden="true" class="hero-ambient-fallback w-full h-full"></div>
+        <!-- Strict Dark Gradient Overlays for High Legibility -->
+        <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/90 to-obsidian/75"></div>
+        <div class="absolute inset-0 bg-radial from-transparent via-obsidian/60 to-obsidian"></div>
+      </div>
+
+      <!-- Hero Glowing Background Orbs -->
+      <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-tealGlow/20 blur-[130px] pointer-events-none animate-pulse-glow"></div>
+      <div class="absolute bottom-10 right-0 w-[28rem] h-[28rem] rounded-full bg-violetGlow/25 blur-[150px] pointer-events-none"></div>
+
+      <!-- 3D LIVE THREE.JS CANVAS (Hero Interactive Object) -->
+      <div id="hero3d-container" class="absolute inset-0 z-10 pointer-events-none sm:pointer-events-auto">
+        <!-- Three.js Canvas mounts here -->
+      </div>
+
+      <!-- Hero Content Layer -->
+      <div class="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-12">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          
+          <!-- Left Column: Copy & CTAs -->
+          <div class="lg:col-span-7 flex flex-col items-start space-y-6 text-left">
+            
+            <!-- Clear disclosure: this page is a product concept, not a live store -->
+            <p role="note" class="max-w-xl text-[11px] sm:text-xs leading-relaxed text-slate-400 border-l-2 border-tealGlow/60 pl-3">
+              Concept preview only. Product claims, specifications, prices and quotes are illustrative; no orders or payments are accepted.
+            </p>
+
+            <!-- Live Status Pill -->
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full glass-panel border border-tealGlow/30 text-tealGlow text-xs uppercase tracking-wider font-semibold shadow-[0_0_15px_rgba(0,245,212,0.2)]">
+              <span class="w-2 h-2 rounded-full bg-tealGlow animate-ping"></span>
+              <span>Autonomous Spatial Core • Gen IV</span>
+            </div>
+
+            <!-- Massive Hero Typography -->
+            <h1 class="text-4xl sm:text-6xl xl:text-7xl font-extrabold tracking-tight leading-[1.08] font-display">
+              <span class="block text-white">Synthesize Reality.</span>
+              <span class="block gradient-title">Meet SIYA.</span>
+            </h1>
+
+            <p class="text-base sm:text-lg text-slate-300 max-w-xl font-normal leading-relaxed">
+              SIYA dissolves the friction of glass screens. An organic, ambient hardware sphere engineered with a sub-millimeter acoustic transducer and 48-teraflop localized neural core. It anticipates your intent before words form.
+            </p>
+
+            <!-- Magnetic CTAs & Live Stats -->
+            <div class="flex flex-wrap items-center gap-4 pt-3 w-full sm:w-auto">
+              <a href="#pricing" class="magnetic-btn w-full sm:w-auto text-center px-8 py-4 rounded-xl font-display font-bold text-sm tracking-wider uppercase bg-tealGlow text-obsidian shadow-[0_0_35px_rgba(0,245,212,0.4)] hover:shadow-[0_0_50px_rgba(0,245,212,0.7)] hover:bg-white transition-all transform hover:-translate-y-0.5">
+                Acquire SIYA One — $499
+              </a>
+              <a href="#showcase" class="w-full sm:w-auto text-center px-7 py-4 rounded-xl font-display font-medium text-sm tracking-wide text-white glass-panel hover:bg-white/10 border border-white/15 transition-all">
+                Explore Sensory Matrix
+              </a>
+            </div>
+
+            <!-- Micro Metrics Footnote -->
+            <div class="pt-6 grid grid-cols-3 gap-6 border-t border-white/10 w-full max-w-lg">
+              <div>
+                <p class="text-2xl font-bold font-display text-white tracking-tight">0.08<span class="text-tealGlow text-sm ml-0.5">ms</span></p>
+                <p class="text-xs text-slate-400 mt-0.5">Spatial Reaction</p>
+              </div>
+              <div>
+                <p class="text-2xl font-bold font-display text-white tracking-tight">100<span class="text-tealGlow text-sm ml-0.5">%</span></p>
+                <p class="text-xs text-slate-400 mt-0.5">On-Device Privacy</p>
+              </div>
+              <div>
+                <p class="text-2xl font-bold font-display text-white tracking-tight">72<span class="text-tealGlow text-sm ml-0.5">hr</span></p>
+                <p class="text-xs text-slate-400 mt-0.5">Solid-State Reserve</p>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Right Column: Micro-interaction Cards + Circular Rotating Stamp -->
+          <div class="lg:col-span-5 flex flex-col items-center justify-center relative perspective-container">
+            
+            <!-- Circular Rotating Text Stamp Badge -->
+            <div class="relative w-64 h-64 sm:w-80 sm:h-80 flex items-center justify-center">
+              <svg class="w-full h-full animate-spin-slow" viewBox="0 0 200 200">
+                <defs>
+                  <path id="textCircle" d="M 100, 100 m -75, 0 a 75,75 0 1,1 150,0 a 75,75 0 1,1 -150,0" fill="none" />
+                </defs>
+                <text class="text-[11px] font-mono tracking-[0.25em] fill-tealGlow uppercase opacity-85">
+                  <textPath href="#textCircle" startOffset="0%">
+                    SIYA SPATIAL HARDWARE • ZERO SCREENS • BATCH 01 •
+                  </textPath>
+                </text>
+              </svg>
+              
+              <!-- Floating Glass HUD Card Center -->
+              <div class="absolute inset-0 flex items-center justify-center p-8">
+                <div class="glass-panel p-6 rounded-3xl border border-white/20 glass-glow flex flex-col items-center text-center transform hover:scale-105 transition-transform duration-500">
+                  <div class="w-12 h-12 rounded-2xl bg-tealGlow/20 border border-tealGlow flex items-center justify-center mb-3">
+                    <svg class="w-6 h-6 text-tealGlow animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                  </div>
+                  <span class="text-xs font-mono uppercase tracking-widest text-slate-400">Mesh Sync: Active</span>
+                  <p class="text-lg font-bold font-display text-white mt-1">Neural Core 4.8</p>
+                  <div class="mt-3 flex items-center gap-1.5 text-[11px] text-tealGlow font-mono">
+                    <span class="w-1.5 h-1.5 rounded-full bg-tealGlow"></span>
+                    <span>1,420 Acoustic Nodes</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Overlapping Glassmorphism Telemetry Card -->
+            <div class="glass-panel -mt-6 p-4 rounded-2xl border border-white/10 shadow-2xl flex items-center gap-4 max-w-xs animate-float-slow">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-violetGlow to-tealGlow flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+              </div>
+              <div class="text-left">
+                <div class="text-[11px] uppercase tracking-wider text-slate-400 font-mono">Ambient Audio Map</div>
+                <div class="text-sm font-bold text-white">Pure Haptic Presence</div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ==============================================
+         SECTION 2: ABOUT & PHILOSOPHY
+         NO PHOTO. Built with CSS 3D Layered Depth Stack & Typography
+    =============================================== -->
+    <section id="about" class="relative py-28 bg-surface/50 border-t border-white/5 overflow-hidden">
+      <!-- Background Ambient Glow -->
+      <div class="absolute top-1/2 left-0 -translate-y-1/2 w-80 h-80 bg-tealGlow/10 rounded-full blur-[140px] pointer-events-none"></div>
+
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        
+        <div class="text-center max-w-3xl mx-auto mb-20">
+          <span class="text-tealGlow font-mono text-xs uppercase tracking-widest font-bold block mb-3">01 // Philosophical Architecture</span>
+          <h2 class="text-3xl sm:text-5xl font-extrabold font-display text-white tracking-tight leading-tight">
+            The post-screen era is not an upgrade.<br class="hidden sm:inline">
+            <span class="gradient-title">It is an emancipation.</span>
+          </h2>
+          <p class="text-slate-400 text-base sm:text-lg mt-5 font-normal leading-relaxed">
+            For twenty years, technology demanded your gaze, trapped in flat rectangles of blue light. SIYA exists in your peripheral field—an acoustic and cognitive companion that speaks only when spoken to, acts without friction, and fades seamlessly into the room.
+          </p>
+        </div>
+
+        <!-- 3D Layered Parallax Depth Visual: Multi-layer CSS 3D Stack -->
+        <div class="perspective-container max-w-4xl mx-auto py-8">
+          <div id="depthStack" class="relative preserve-3d w-full min-h-[380px] sm:h-[420px] rounded-3xl glass-panel p-8 sm:p-12 border border-white/10 flex flex-col justify-between transition-transform duration-200">
+            
+            <!-- Layer 0: Background Grid Texture -->
+            <div class="absolute inset-4 rounded-2xl border border-white/5 bg-obsidian/70 -translate-z-10 pointer-events-none"></div>
+            
+            <!-- Layer 1: Floating Core Badges (Translate Z) -->
+            <div class="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-6" style="transform: translateZ(30px);">
+              <div class="flex items-center gap-3">
+                <span class="h-3 w-3 rounded-full bg-tealGlow"></span>
+                <span class="font-mono text-xs uppercase text-slate-300 tracking-wider">Spatial Awareness: Active 360°</span>
+              </div>
+              <span class="font-mono text-xs text-tealGlow px-3 py-1 rounded-full bg-tealGlow/10 border border-tealGlow/30">Architecture v4.2</span>
+            </div>
+
+            <!-- Layer 2: Centerpiece 3D Depth Card (Translate Z) -->
+            <div class="my-6 grid grid-cols-1 md:grid-cols-3 gap-6" style="transform: translateZ(50px);">
+              
+              <div class="p-5 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-tealGlow/40 transition-colors">
+                <div class="text-tealGlow font-mono text-sm mb-2">01. INGESTION</div>
+                <h3 class="text-lg font-bold font-display text-white mb-1">Far-Field Spatial</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">Dual MEMS phased arrays track your tone, azimuth, and micro-whispers from up to 12 meters.</p>
+              </div>
+
+              <div class="p-5 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-violetGlow/40 transition-colors">
+                <div class="text-violetGlow font-mono text-sm mb-2">02. SYNTHESIS</div>
+                <h3 class="text-lg font-bold font-display text-white mb-1">Local Neural Mesh</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">No telemetry leaves your room. Real-time token generation at 180 tokens/sec directly on silicon.</p>
+              </div>
+
+              <div class="p-5 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-tealGlow/40 transition-colors">
+                <div class="text-tealGlow font-mono text-sm mb-2">03. PROJECTION</div>
+                <h3 class="text-lg font-bold font-display text-white mb-1">Phased Soundbeam</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">Pinpoint directional audio reaches your ears exclusively without headphones or room leakage.</p>
+              </div>
+
+            </div>
+
+            <!-- Layer 3: Interactive Floor Status (Translate Z) -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-slate-400 border-t border-white/10 pt-4 gap-2" style="transform: translateZ(20px);">
+              <span>Latency guarantee: Under 12ms roundtrip</span>
+              <span class="font-mono text-tealGlow">Encrypted via Ephemeral Kyber-1024</span>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==============================================
+         SECTION 3: FEATURES & CAPABILITIES
+         NO PHOTO. Bento Grid of 3D Perspective Tilt Cards
+    =============================================== -->
+    <section id="features" class="relative py-28 bg-obsidian overflow-hidden">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+          <div>
+            <span class="text-tealGlow font-mono text-xs uppercase tracking-widest font-bold block mb-2">02 // Sensory Specifications</span>
+            <h2 class="text-3xl sm:text-5xl font-extrabold font-display text-white tracking-tight">
+              Crafted with zero compromises.
+            </h2>
+          </div>
+          <p class="text-slate-400 max-w-md text-sm sm:text-base">
+            Every millimeter of SIYA's unibody titanium orb works in concert with on-silicon intelligence.
+          </p>
+        </div>
+
+        <!-- 3D Bento Box Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <!-- Bento 1: Large Featured Card (Spans 2 cols) -->
+          <div class="md:col-span-2 tilt-card glass-panel rounded-3xl p-8 sm:p-10 border border-white/10 relative overflow-hidden group hover:border-tealGlow/50">
+            <div class="absolute -top-24 -right-24 w-64 h-64 bg-tealGlow/10 rounded-full blur-3xl group-hover:bg-tealGlow/20 transition-all"></div>
+            
+            <div class="relative z-10 flex flex-col justify-between h-full">
+              <div class="flex items-center justify-between mb-8">
+                <span class="px-3.5 py-1 rounded-full text-xs font-mono font-semibold uppercase tracking-wider bg-tealGlow/10 text-tealGlow border border-tealGlow/30">Holographic Audio</span>
+                <span class="text-slate-500 font-mono text-xs">01 / ACOUSTICS</span>
+              </div>
+
+              <div>
+                <h3 class="text-2xl sm:text-3xl font-bold font-display text-white mb-3">Targeted Whisper Array</h3>
+                <p class="text-slate-300 text-sm sm:text-base leading-relaxed max-w-xl mb-6">
+                  Using ultra-high frequency acoustic beamforming, SIYA directs sound specifically to your coordinates. Even in a crowded living room, only you hear notifications, call briefings, or your customized soundscapes.
+                </p>
+
+                <!-- Interactive 3D Audio Visualizer Element -->
+                <div class="grid grid-cols-8 gap-2 h-16 items-end p-4 rounded-xl bg-obsidian/80 border border-white/5">
+                  <span class="w-full bg-tealGlow/40 rounded-full h-8 group-hover:h-12 transition-all duration-300"></span>
+                  <span class="w-full bg-tealGlow/60 rounded-full h-12 group-hover:h-14 transition-all duration-300 delay-75"></span>
+                  <span class="w-full bg-tealGlow rounded-full h-14 group-hover:h-10 transition-all duration-300 delay-100"></span>
+                  <span class="w-full bg-tealGlow/80 rounded-full h-6 group-hover:h-14 transition-all duration-300 delay-150"></span>
+                  <span class="w-full bg-tealGlow/50 rounded-full h-10 group-hover:h-8 transition-all duration-300 delay-75"></span>
+                  <span class="w-full bg-tealGlow rounded-full h-14 group-hover:h-12 transition-all duration-300 delay-200"></span>
+                  <span class="w-full bg-tealGlow/70 rounded-full h-8 group-hover:h-14 transition-all duration-300 delay-100"></span>
+                  <span class="w-full bg-tealGlow/40 rounded-full h-5 group-hover:h-9 transition-all duration-300"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bento 2: Vertical Neural Silicon Card -->
+          <div class="tilt-card glass-panel rounded-3xl p-8 border border-white/10 relative overflow-hidden group hover:border-violetGlow/50 flex flex-col justify-between">
+            <div class="absolute -bottom-20 -left-20 w-48 h-48 bg-violetGlow/20 rounded-full blur-3xl group-hover:scale-125 transition-transform"></div>
+
+            <div>
+              <div class="flex items-center justify-between mb-8">
+                <span class="px-3 py-1 rounded-full text-xs font-mono font-semibold uppercase tracking-wider bg-violetGlow/10 text-violetGlow border border-violetGlow/30">Neural Engine</span>
+                <span class="text-slate-500 font-mono text-xs">02 / CORE</span>
+              </div>
+              <h3 class="text-xl sm:text-2xl font-bold font-display text-white mb-2">Siya-Q Silicon</h3>
+              <p class="text-slate-400 text-sm leading-relaxed mb-6">
+                Custom 3nm dedicated NPU with 48 TOPS of localized tensor acceleration. Run 30B parameter multimodal models with zero cloud latency.
+              </p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-obsidian/80 border border-white/5 font-mono text-xs space-y-2">
+              <div class="flex justify-between text-slate-400">
+                <span>Model Param:</span>
+                <span class="text-white">32.4 Billion</span>
+              </div>
+              <div class="flex justify-between text-slate-400">
+                <span>Memory Bandwidth:</span>
+                <span class="text-tealGlow">840 GB/s</span>
+              </div>
+              <div class="flex justify-between text-slate-400">
+                <span>Local Retention:</span>
+                <span class="text-tealGlow">Infinite Ring</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bento 3: Biometric Touch Ring -->
+          <div class="tilt-card glass-panel rounded-3xl p-8 border border-white/10 relative overflow-hidden group hover:border-tealGlow/50 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-8">
+                <span class="px-3 py-1 rounded-full text-xs font-mono font-semibold uppercase tracking-wider bg-white/5 text-slate-300 border border-white/10">Tactile Ring</span>
+                <span class="text-slate-500 font-mono text-xs">03 / TOUCH</span>
+              </div>
+              <h3 class="text-xl sm:text-2xl font-bold font-display text-white mb-2">Liquid Quartz Dial</h3>
+              <p class="text-slate-400 text-sm leading-relaxed">
+                A seamless sapphire crystal crest with 3,000 capacitive micro-indentations. Glide a finger to calibrate focus zones or mute sensors physically.
+              </p>
+            </div>
+
+            <div class="mt-8 flex items-center justify-center">
+              <div class="w-24 h-24 rounded-full border-2 border-dashed border-tealGlow/40 flex items-center justify-center animate-spin-slow p-2">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-tealGlow to-violetGlow opacity-80 flex items-center justify-center shadow-lg">
+                  <span class="text-[10px] font-mono text-obsidian font-bold">MUTED</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bento 4: Zero Cloud Privacy (Spans 2 cols) -->
+          <div class="md:col-span-2 tilt-card glass-panel rounded-3xl p-8 sm:p-10 border border-white/10 relative overflow-hidden group hover:border-tealGlow/50">
+            <div class="relative z-10 flex flex-col justify-between h-full">
+              <div class="flex items-center justify-between mb-6">
+                <span class="px-3.5 py-1 rounded-full text-xs font-mono font-semibold uppercase tracking-wider bg-tealGlow/10 text-tealGlow border border-tealGlow/30">Sovereign Privacy</span>
+                <span class="text-slate-500 font-mono text-xs">04 / ENCRYPTION</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 items-center">
+                <div>
+                  <h3 class="text-2xl sm:text-3xl font-bold font-display text-white mb-3">No Cloud. No Breaches.</h3>
+                  <p class="text-slate-300 text-sm leading-relaxed mb-4">
+                    Your conversations, habits, and private spaces never touch a third-party server. All embeddings stay cryptographically isolated on internal secure enclaves.
+                  </p>
+                  <div class="inline-flex items-center gap-2 text-xs font-mono text-tealGlow">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    Audited by Cryptographic Standards Bureau
+                  </div>
+                </div>
+
+                <div class="glass-panel p-5 rounded-2xl border border-white/10 space-y-3 font-mono text-xs">
+                  <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                    <span class="text-slate-400">Kill Switch</span>
+                    <span class="text-tealGlow font-bold">Physical Galvanic</span>
+                  </div>
+                  <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                    <span class="text-slate-400">Microphone Bias</span>
+                    <span class="text-tealGlow font-bold">Optically Isolated</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-400">Telemetry Outflow</span>
+                    <span class="text-emerald-400 font-bold">0.00 Bytes/Month</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==============================================
+         SECTION 4: SHOWCASE GALLERY
+         Contains PHOTO #2 (Only one photo section here)
+         Presented in a 3D Perspective Gallery Stage
+    =============================================== -->
+    <section id="showcase" class="relative py-28 bg-surface overflow-hidden border-y border-white/5">
+      <!-- Glow ambient -->
+      <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-electricCyan/10 rounded-full blur-[140px] pointer-events-none"></div>
+
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        
+        <div class="text-center max-w-3xl mx-auto mb-16">
+          <span class="text-tealGlow font-mono text-xs uppercase tracking-widest font-bold block mb-2">03 // Industrial Masterpiece</span>
+          <h2 class="text-3xl sm:text-5xl font-extrabold font-display text-white tracking-tight">
+            Forged in aerospace grade titanium.
+          </h2>
+          <p class="text-slate-400 text-sm sm:text-base mt-4">
+            A continuous spherical sculpture that breathes softly through micro-perforated sound channels.
+          </p>
+        </div>
+
+        <!-- 3D Perspective Showcase Stand -->
+        <div class="perspective-container max-w-5xl mx-auto">
+          <div class="preserve-3d relative rounded-3xl overflow-hidden glass-panel border border-white/20 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] group transition-transform duration-500 hover:scale-[1.01]">
+            
+            <!-- Self-contained ambient product backdrop for static hosting -->
+            <div class="relative h-[480px] sm:h-[580px] w-full overflow-hidden">
+              <div aria-hidden="true" class="showcase-ambient-fallback w-full h-full"></div>
+              
+              <!-- Dark Overlay Gradient for Strong Typography Readability -->
+              <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-obsidian/30"></div>
+              
+              <!-- Floating 3D HUD Badges Over Showcase -->
+              <div class="absolute top-8 left-8 flex flex-col gap-3">
+                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-panel border border-tealGlow/30 text-tealGlow text-xs font-mono">
+                  <span class="w-2 h-2 rounded-full bg-tealGlow animate-ping"></span>
+                  Edition: Obsidian Matte
+                </span>
+                <span class="inline-flex items-center px-3 py-1 rounded-full glass-panel border border-white/20 text-white text-xs font-mono">
+                  Weight: 640 grams
+                </span>
+              </div>
+
+              <div class="absolute bottom-8 left-8 right-8 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6">
+                <div class="max-w-md">
+                  <span class="text-xs uppercase font-mono tracking-widest text-tealGlow font-bold">Unibody Acoustic Chamber</span>
+                  <h3 class="text-2xl sm:text-3xl font-display font-bold text-white mt-1">Zero Screws. Pure Monolith.</h3>
+                  <p class="text-sm text-slate-300 mt-2">
+                    Turned on five-axis CNC mills from a solid billet of Grade 5 titanium, then finished with bead-blasted satin ceramic coat.
+                  </p>
+                </div>
+
+                <!-- Interactive 3D Rotation Cue -->
+                <div class="glass-panel px-5 py-3 rounded-2xl border border-white/20 flex items-center gap-3">
+                  <svg class="w-5 h-5 text-tealGlow animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                  <div class="text-left font-mono text-xs">
+                    <p class="text-white font-bold">360° Uniform Acoustic</p>
+                    <p class="text-slate-400">Null Phase Distortion</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==============================================
+         SECTION 5: PROCESS & ARCHITECTURE
+         NO PHOTO. 3D Flip Cards for Interactive Exploration
+    =============================================== -->
+    <section id="architecture" class="relative py-28 bg-obsidian overflow-hidden">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        
+        <div class="text-center max-w-3xl mx-auto mb-20">
+          <span class="text-tealGlow font-mono text-xs uppercase tracking-widest font-bold block mb-2">04 // Neural Pipeline</span>
+          <h2 class="text-3xl sm:text-5xl font-extrabold font-display text-white tracking-tight">
+            How SIYA deciphers your reality.
+          </h2>
+          <p class="text-slate-400 text-base mt-4">
+            Hover or tap each phase card below to flip and inspect the low-level silicon pipeline.
+          </p>
+        </div>
+
+        <!-- 3D Flip Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 perspective-container">
+          
+          <!-- Card 1: Far-Field Perception -->
+          <div class="flip-card h-[380px] w-full cursor-pointer" onclick="this.classList.toggle('flipped')">
+            <div class="flip-card-inner relative w-full h-full">
+              
+              <!-- Front Face -->
+              <div class="flip-card-front absolute inset-0 glass-panel rounded-3xl p-8 border border-white/10 flex flex-col justify-between group hover:border-tealGlow/40">
+                <div>
+                  <div class="w-14 h-14 rounded-2xl bg-tealGlow/10 border border-tealGlow/30 flex items-center justify-center mb-6">
+                    <svg class="w-7 h-7 text-tealGlow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z"/></svg>
+                  </div>
+                  <span class="text-tealGlow font-mono text-xs font-semibold uppercase tracking-wider">Phase 01</span>
+                  <h3 class="text-2xl font-bold font-display text-white mt-2">Continuous Perception</h3>
+                  <p class="text-slate-400 text-sm mt-3 leading-relaxed">
+                    SIYA consumes room acoustics at 192kHz. It separates human voices, kitchen appliances, and typing cadences into spatial vectors.
+                  </p>
+                </div>
+                <div class="flex items-center justify-between text-xs font-mono text-slate-500 pt-4 border-t border-white/5">
+                  <span>TAP TO FLIP SPEC</span>
+                  <span class="text-tealGlow">→</span>
+                </div>
+              </div>
+
+              <!-- Back Face -->
+              <div class="flip-card-back absolute inset-0 rounded-3xl p-8 bg-card border border-tealGlow/40 flex flex-col justify-between shadow-2xl">
+                <div>
+                  <span class="text-tealGlow font-mono text-xs uppercase tracking-wider font-bold">Hardware Specification</span>
+                  <h4 class="text-xl font-bold font-display text-white mt-2">MEMS Phased Array</h4>
+                  <ul class="mt-4 space-y-2.5 text-xs text-slate-300 font-mono">
+                    <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-tealGlow"></span>8x Differential Microphones</li>
+                    <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-tealGlow"></span>SNR: 74 dB(A) High Fidelity</li>
+                    <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-tealGlow"></span>True Beamforming Directionality</li>
+                    <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-tealGlow"></span>Zero Echo Acoustic Cancellation</li>
+                  </ul>
+                </div>
+                <button class="w-full py-2.5 rounded-xl bg-tealGlow/10 text-tealGlow text-xs font-mono font-bold hover:bg-tealGlow hover:text-obsidian transition-colors">
+                  Reset View
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Card 2: Neural Synthesis -->
+          <div class="flip-card h-[380px] w-full cursor-pointer" onclick="this.classList.toggle('flipped')">
+            <div class="flip-card-inner relative w-full h-full">
+              
+              <!-- Front Face -->
+              <div class="flip-card-front absolute inset-0 glass-panel rounded-3xl p-8 border border-white/10 flex flex-col justify-between group hover:border-violetGlow/40">
+                <div>
+                  <div class="w-14 h-14 rounded-2xl bg-violetGlow/10 border border-violetGlow/30 flex items-center justify-center mb-6">
+                    <svg class="w-7 h-7 text-violetGlow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                  </div>
+                  <span class="text-violetGlow font-mono text-xs font-semibold uppercase tracking-wider">Phase 02</span>
+                  <h3 class="text-2xl font-bold font-display text-white mt-2">Quantum Context</h3>
+                  <p class="text-slate-400 text-sm mt-3 leading-relaxed">
+                    Synthesizes past calendar context, family routines, and priority work states to decide if an alert is worthy of interrupting your flow.
+                  </p>
+                </div>
+                <div class="flex items-center justify-between text-xs font-mono text-slate-500 pt-4 border-t border-white/5">
+                  <span>TAP TO FLIP SPEC</span>
+                  <span class="text-violetGlow">→</span>
+                </div>
+              </div>
+
+              <!-- Back Face -->
+              <div class="flip-card-back absolute inset-0 rounded-3xl p-8 bg-card border border-violetGlow/40 flex flex-col justify-between shadow-2xl">
+                <div>
+                  <span class="text-violetGlow font-mono text-xs uppercase tracking-wider font-bold">Inference Matrix</span>
+                  <h4 class="text-xl font-bold font-display text-white mt-2">Quantized Neural Stack</h4>
+                  <ul class="mt-4 space-y-2.5 text-xs text-slate-300 font-mono">
+                    <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-violetGlow"></span>Flash Attention 3 Integration</li>
+                    <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-violetGlow"></span>INT4 / FP8 Hybrid Precision</li>
+                    <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-violetGlow"></span>Self-Updating Episodic Graph</li>
+                    <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-violetGlow"></span>Context Window: 128k Tokens</li>
+                  </ul>
+                </div>
+                <button class="w-full py-2.5 rounded-xl bg-violetGlow/10 text-violetGlow text-xs font-mono font-bold hover:bg-violetGlow hover:text-white transition-colors">
+                  Reset View
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Card 3: Ambient Action -->
+          <div class="flip-card h-[380px] w-full cursor-pointer" onclick="this.classList.toggle('flipped')">
+            <div class="flip-card-inner relative w-full h-full">
+              
+              <!-- Front Face -->
+              <div class="flip-card-front absolute inset-0 glass-panel rounded-3xl p-8 border border-white/10 flex flex-col justify-between group hover:border-tealGlow/40">
+                <div>
+                  <div class="w-14 h-14 rounded-2xl bg-tealGlow/10 border border-tealGlow/30 flex items-center justify-center mb-6">
+                    <svg class="w-7 h-7 text-tealGlow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                  </div>
+                  <span class="text-tealGlow font-mono text-xs font-semibold uppercase tracking-wider">Phase 03</span>
+                  <h3 class="text-2xl font-bold font-display text-white mt-2">Zero-Click Action</h3>
+                  <p class="text-slate-400 text-sm mt-3 leading-relaxed">
+                    SIYA executes actions across home protocols, booking APIs, and email drafts. Feedback is delivered as a soft haptic tone or quiet confirmation.
+                  </p>
+                </div>
+                <div class="flex items-center justify-between text-xs font-mono text-slate-500 pt-4 border-t border-white/5">
+                  <span>TAP TO FLIP SPEC</span>
+                  <span class="text-tealGlow">→</span>
+                </div>
+              </div>
+
+              <!-- Back Face -->
+              <div class="flip-card-back absolute inset-0 rounded-3xl p-8 bg-card border border-tealGlow/40 flex flex-col justify-between shadow-2xl">
+                <div>
+                  <span class="text-tealGlow font-mono text-xs uppercase tracking-wider font-bold">Ecosystem Link</span>
+                  <h4 class="text-xl font-bold font-display text-white mt-2">Universal Actuators</h4>
+                  <ul class="mt-4 space-y-2.5 text-xs text-slate-300 font-mono">
+                    <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-tealGlow"></span>Matter & Thread 2.0 Native</li>
+                    <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-tealGlow"></span>End-to-End Home Assistant API</li>
+                    <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-tealGlow"></span>Encrypted Webhooks & SSH</li>
+                    <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-tealGlow"></span>Local Smart Zigbee Coordinator</li>
+                  </ul>
+                </div>
+                <button class="w-full py-2.5 rounded-xl bg-tealGlow/10 text-tealGlow text-xs font-mono font-bold hover:bg-tealGlow hover:text-obsidian transition-colors">
+                  Reset View
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==============================================
+         SECTION 6: RESERVATION & PRICING
+         NO PHOTO. Contains 3D Interactive CSS Tier Cards
+    =============================================== -->
+    <section id="pricing" class="relative py-28 bg-surface/80 border-t border-white/5">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        
+        <div class="text-center max-w-2xl mx-auto mb-16">
+          <span class="text-tealGlow font-mono text-xs uppercase tracking-widest font-bold block mb-2">05 // Limited Allocation</span>
+          <h2 class="text-3xl sm:text-5xl font-extrabold font-display text-white tracking-tight">
+            Reserve Batch 01.
+          </h2>
+          <p class="text-slate-400 text-sm sm:text-base mt-4">
+            Only 2,500 units milled for the inaugural genesis edition. Numbered certificate in serialized titanium block.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto perspective-container">
+          
+          <!-- Standard Edition -->
+          <div class="tilt-card glass-panel rounded-3xl p-8 sm:p-10 border border-white/10 flex flex-col justify-between hover:border-white/30 transition-all">
+            <div>
+              <div class="flex items-center justify-between">
+                <h3 class="text-xl font-bold font-display text-white">SIYA One Core</h3>
+                <span class="text-xs font-mono text-slate-400">CERAMIC WHITE</span>
+              </div>
+              <div class="mt-6 flex items-baseline gap-2">
+                <span class="text-4xl sm:text-5xl font-extrabold font-display text-white">$499</span>
+                <span class="text-xs font-mono text-slate-400 uppercase">/ Single Payment</span>
+              </div>
+              <p class="text-slate-300 text-xs sm:text-sm mt-4 leading-relaxed">
+                Complete ambient intelligence hardware with aluminum acoustic baffle, 32GB high-speed unified NPU RAM, and baseline sensory array.
+              </p>
+
+              <ul class="mt-8 space-y-3 font-mono text-xs text-slate-300">
+                <li class="flex items-center gap-3">
+                  <svg class="w-4 h-4 text-tealGlow shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  <span>1x SIYA One Titanium Spherical Core</span>
+                </li>
+                <li class="flex items-center gap-3">
+                  <svg class="w-4 h-4 text-tealGlow shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  <span>Solid-State Inductive Wireless Base</span>
+                </li>
+                <li class="flex items-center gap-3">
+                  <svg class="w-4 h-4 text-tealGlow shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  <span>Lifetime Local Firmware Updates</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="mt-10">
+              <button type="button" data-reserve-cta data-product="SIYA One Core" class="w-full py-4 rounded-xl font-display font-bold text-xs uppercase tracking-wider bg-white/10 text-white hover:bg-white hover:text-obsidian transition-all">
+                Pre-Order SIYA Core
+              </button>
+            </div>
+          </div>
+
+          <!-- Studio Collector's Edition -->
+          <div class="tilt-card glass-panel rounded-3xl p-8 sm:p-10 border-2 border-tealGlow/50 relative overflow-hidden flex flex-col justify-between shadow-[0_0_50px_rgba(0,245,212,0.15)]">
+            <div class="absolute top-0 right-0 bg-tealGlow text-obsidian font-mono text-[10px] font-extrabold uppercase tracking-widest px-4 py-1.5 rounded-bl-xl">
+              FOUNDERS EDITION
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between">
+                <h3 class="text-xl font-bold font-display text-white">SIYA Studio Max</h3>
+                <span class="text-xs font-mono text-tealGlow">TITANIUM OBSIDIAN</span>
+              </div>
+              <div class="mt-6 flex items-baseline gap-2">
+                <span class="text-4xl sm:text-5xl font-extrabold font-display text-tealGlow">$799</span>
+                <span class="text-xs font-mono text-slate-400 uppercase">/ Single Payment</span>
+              </div>
+              <p class="text-slate-300 text-xs sm:text-sm mt-4 leading-relaxed">
+                Grade 5 Titanium unibody, 64GB ultra-fast unified NPU RAM for local fine-tuning, dual soundbeam transducers, and serialized NFT certificate.
+              </p>
+
+              <ul class="mt-8 space-y-3 font-mono text-xs text-slate-200">
+                <li class="flex items-center gap-3">
+                  <svg class="w-4 h-4 text-tealGlow shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  <span>Milled Titanium Grade 5 Enclosure</span>
+                </li>
+                <li class="flex items-center gap-3">
+                  <svg class="w-4 h-4 text-tealGlow shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  <span>Dual Phased Whisper Soundbeams</span>
+                </li>
+                <li class="flex items-center gap-3">
+                  <svg class="w-4 h-4 text-tealGlow shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  <span>Priority Neural Engine Early Access</span>
+                </li>
+                <li class="flex items-center gap-3">
+                  <svg class="w-4 h-4 text-tealGlow shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  <span>Bespoke Handcrafted Leather Charging Dock</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="mt-10">
+              <button type="button" data-reserve-cta data-product="SIYA Studio Max" class="magnetic-btn w-full py-4 rounded-xl font-display font-bold text-xs uppercase tracking-wider bg-tealGlow text-obsidian hover:bg-white hover:shadow-[0_0_30px_rgba(0,245,212,0.8)] transition-all">
+                Claim Batch 01 Founders Slot
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Social Proof / Testimonials with Pravatar CDN -->
+        <div class="mt-20 pt-16 border-t border-white/10 max-w-4xl mx-auto">
+          <p class="text-center text-xs font-mono uppercase tracking-widest text-slate-400 mb-8">Illustrative Concept Reactions</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div class="glass-panel p-6 rounded-2xl border border-white/5 flex gap-4 items-center">
+              <div role="img" aria-label="Illustrative concept response" class="w-12 h-12 rounded-full border border-tealGlow bg-tealGlow/10 text-tealGlow font-mono text-xs flex items-center justify-center shrink-0">01</div>
+              <div>
+                <p class="text-xs text-slate-300 italic">"SIYA is the first piece of hardware since the original iPod that feels truly magical. No screens, pure calm clarity."</p>
+                <p class="text-xs font-bold text-white mt-1">Concept response 01 <span class="font-normal text-slate-400 font-mono">• illustrative copy</span></p>
+              </div>
+            </div>
+            <div class="glass-panel p-6 rounded-2xl border border-white/5 flex gap-4 items-center">
+              <div role="img" aria-label="Illustrative concept response" class="w-12 h-12 rounded-full border border-violetGlow bg-violetGlow/10 text-violetGlow font-mono text-xs flex items-center justify-center shrink-0">02</div>
+              <div>
+                <p class="text-xs text-slate-300 italic">"The directional whisper audio is eerie in the best way. My desk feels completely decluttered from digital noise."</p>
+                <p class="text-xs font-bold text-white mt-1">Concept response 02 <span class="font-normal text-slate-400 font-mono">• illustrative copy</span></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==============================================
+         SECTION 7: FINAL CTA WITH 2ND THREE.JS CANVAS
+         NO PHOTO. Distinct Three.js Scene: Quantum Polyhedral Core
+    =============================================== -->
+    <section class="relative min-h-[580px] flex items-center justify-center overflow-hidden py-24 bg-obsidian">
+      
+      <!-- 2ND THREE.JS SCENE CANVAS CONTAINER -->
+      <div id="cta3d-container" class="absolute inset-0 z-0 pointer-events-none"></div>
+
+      <!-- Glowing Accent Radial -->
+      <div class="absolute inset-0 bg-radial from-transparent via-obsidian/75 to-obsidian pointer-events-none"></div>
+      
+      <div class="relative z-10 max-w-4xl mx-auto px-4 text-center">
+        <span class="inline-block px-4 py-1.5 rounded-full text-xs font-mono font-bold uppercase tracking-widest text-tealGlow border border-tealGlow/30 glass-panel mb-6">
+          Batch 01 • Concept Preview
+        </span>
+
+        <h2 class="text-4xl sm:text-6xl font-extrabold font-display tracking-tight text-white leading-tight">
+          Welcome to the world<br>
+          <span class="gradient-title">after the screen.</span>
+        </h2>
+
+        <p class="text-slate-300 text-base sm:text-lg max-w-xl mx-auto mt-6 leading-relaxed">
+          Step into ambient computing. Claim your spot in the inaugural production run before Batch 01 closes.
+        </p>
+
+        <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a href="#pricing" class="magnetic-btn w-full sm:w-auto px-10 py-4 rounded-xl font-display font-extrabold text-sm uppercase tracking-widest bg-tealGlow text-obsidian shadow-[0_0_35px_rgba(0,245,212,0.5)] hover:bg-white hover:scale-105 transition-all">
+            Lock In Your SIYA Core
+          </a>
+          <a href="#about" class="w-full sm:w-auto px-8 py-4 rounded-xl font-display font-semibold text-sm uppercase tracking-wider text-white glass-panel hover:bg-white/10 border border-white/20 transition-all">
+            Read the concept
+          </a>
+        </div>
+
+        <div class="mt-8 flex items-center justify-center gap-6 text-xs font-mono text-slate-400">
+          <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> Illustrative configuration</span>
+          <span>•</span>
+          <span>Prices are not live</span>
+          <span>•</span>
+          <span>No payment flow</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==============================================
+       FOOTER
+  =============================================== -->
+  <footer class="bg-obsidian border-t border-white/10 text-slate-400 text-xs py-14">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
+        
+        <div class="col-span-2">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-8 h-8 rounded-lg bg-tealGlow flex items-center justify-center font-display font-black text-obsidian text-lg">
+              S
+            </div>
+            <span class="font-display font-bold text-lg text-white tracking-wider">SIYA LABS</span>
+          </div>
+          <p class="text-slate-400 max-w-sm text-xs leading-relaxed">
+            Pioneering non-invasive ambient neural computing. A speculative exploration of screen-light ambient computing.
+          </p>
+          <p class="font-mono text-[11px] text-tealGlow mt-4">
+            Concept interface — no live product systems connected
+          </p>
+        </div>
+
+        <div>
+          <h4 class="font-display font-bold text-white text-xs uppercase tracking-wider mb-3">Product</h4>
+          <ul class="space-y-2">
+            <li><a href="#hero" class="hover:text-tealGlow transition-colors">Overview</a></li>
+            <li><a href="#features" class="hover:text-tealGlow transition-colors">Neural Mesh</a></li>
+            <li><a href="#showcase" class="hover:text-tealGlow transition-colors">Titanium Body</a></li>
+            <li><a href="#pricing" class="hover:text-tealGlow transition-colors">Reserve Batch</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-display font-bold text-white text-xs uppercase tracking-wider mb-3">Company</h4>
+          <ul class="space-y-2">
+            <li><a href="#about" class="hover:text-tealGlow transition-colors">Manifesto</a></li>
+            <li><a href="#" class="hover:text-tealGlow transition-colors">Careers (We're Hiring)</a></li>
+            <li><a href="#" class="hover:text-tealGlow transition-colors">Security Whitepaper</a></li>
+            <li><a href="#" class="hover:text-tealGlow transition-colors">Press Inquiries</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-display font-bold text-white text-xs uppercase tracking-wider mb-3">Compliance</h4>
+          <ul class="space-y-2">
+            <li><a href="#" class="hover:text-tealGlow transition-colors">Privacy Charter</a></li>
+            <li><a href="#" class="hover:text-tealGlow transition-colors">Terms of Hardware</a></li>
+            <li><a href="#" class="hover:text-tealGlow transition-colors">Zero-Telemetry Audit</a></li>
+            <li><a href="#" class="hover:text-tealGlow transition-colors">Patents & Open Core</a></li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="border-t border-white/5 pt-8 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500 gap-4">
+        <div>
+          © SIYA Concept Preview. Product names and content are illustrative.
+        </div>
+        <div class="flex items-center gap-6">
+          <a href="#" class="hover:text-slate-300 transition-colors">X / Twitter</a>
+          <a href="#" class="hover:text-slate-300 transition-colors">GitHub</a>
+          <a href="#" class="hover:text-slate-300 transition-colors">Discord Community</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <dialog id="conceptDialog" class="concept-dialog" aria-labelledby="conceptDialogTitle">
+    <div class="glass-panel rounded-3xl p-7 sm:p-9 border border-tealGlow/30 shadow-[0_0_50px_rgba(0,245,212,0.18)]">
+      <p class="text-[11px] font-mono uppercase tracking-[0.2em] text-tealGlow">Concept preview</p>
+      <h2 id="conceptDialogTitle" class="font-display text-2xl font-bold text-white mt-3">Reservation unavailable</h2>
+      <p class="text-sm leading-relaxed text-slate-300 mt-4"><span data-product-name>SIYA</span> is shown here as a design concept. This demo does not take orders, collect personal information, or process payments. The listed price and product details are illustrative only.</p>
+      <button id="closeConceptDialog" type="button" class="mt-7 w-full rounded-xl bg-tealGlow px-5 py-3 text-sm font-bold text-obsidian hover:bg-white transition-colors">Got it</button>
+    </div>
+  </dialog>
+
+
+  <!-- ==============================================
+       SCRIPTS: THREE.JS (2 SCENES) + GSAP + 3D TILT
+  =============================================== -->
+  <script>
+    // --- 1. Mobile Navigation Drawer ---
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const menuIcon = document.getElementById('menuIcon');
+    const closeIcon = document.getElementById('closeIcon');
+    const mobileLinks = document.querySelectorAll('.mobile-link');
+
+    if (mobileBtn && mobileMenu) {
+      mobileBtn.addEventListener('click', () => {
+        const isOpen = !mobileMenu.classList.contains('hidden');
+        if (isOpen) {
+          mobileMenu.classList.add('hidden');
+          menuIcon.classList.remove('hidden');
+          closeIcon.classList.add('hidden');
+          mobileBtn.setAttribute('aria-expanded', 'false');
+        } else {
+          mobileMenu.classList.remove('hidden');
+          menuIcon.classList.add('hidden');
+          closeIcon.classList.remove('hidden');
+          mobileBtn.setAttribute('aria-expanded', 'true');
+        }
+      });
+
+      mobileLinks.forEach(link => {
+        link.addEventListener('click', () => {
+          mobileMenu.classList.add('hidden');
+          menuIcon.classList.remove('hidden');
+          closeIcon.classList.add('hidden');
+          mobileBtn.setAttribute('aria-expanded', 'false');
+        });
+      });
+    }
+
+    // --- Concept-only reservation feedback; this page has no checkout ---
+    const conceptDialog = document.getElementById('conceptDialog');
+    const conceptDialogProduct = conceptDialog?.querySelector('[data-product-name]');
+    document.querySelectorAll('[data-reserve-cta]').forEach((button) => {
+      button.addEventListener('click', () => {
+        if (!conceptDialog) return;
+        if (conceptDialogProduct) conceptDialogProduct.textContent = button.dataset.product || 'SIYA';
+        conceptDialog.showModal();
+      });
+    });
+    document.getElementById('closeConceptDialog')?.addEventListener('click', () => conceptDialog?.close());
+    conceptDialog?.addEventListener('click', (event) => {
+      if (event.target === conceptDialog) conceptDialog.close();
+    });
+
+    // --- 2. Navbar Glass on Scroll ---
+    window.addEventListener('scroll', () => {
+      const nav = document.getElementById('navbar');
+      if (window.scrollY > 30) {
+        nav.classList.add('bg-obsidian/85', 'backdrop-blur-md', 'border-b', 'border-white/10', 'shadow-xl');
+      } else {
+        nav.classList.remove('bg-obsidian/85', 'backdrop-blur-md', 'border-b', 'border-white/10', 'shadow-xl');
+      }
+    });
+
+    // --- 3. Magnetic Button Micro-Interaction ---
+    const magneticBtns = document.querySelectorAll('.magnetic-btn');
+    magneticBtns.forEach(btn => {
+      btn.addEventListener('mousemove', (e) => {
+        const rect = btn.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+        gsap.to(btn, {
+          x: x * 0.25,
+          y: y * 0.25,
+          duration: 0.3,
+          ease: 'power2.out'
+        });
+      });
+      btn.addEventListener('mouseleave', () => {
+        gsap.to(btn, {
+          x: 0,
+          y: 0,
+          duration: 0.5,
+          ease: 'elastic.out(1, 0.3)'
+        });
+      });
+    });
+
+    // --- 4. CSS 3D Tilt Cards (Mouse & Touch Move) ---
+    const tiltCards = document.querySelectorAll('.tilt-card');
+    tiltCards.forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const rotateX = ((y - centerY) / centerY) * -9;
+        const rotateY = ((x - centerX) / centerX) * 9;
+        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+      });
+    });
+
+    // --- 5. About Section 3D Depth Layer Interaction ---
+    const depthStack = document.getElementById('depthStack');
+    if (depthStack) {
+      depthStack.addEventListener('mousemove', (e) => {
+        const rect = depthStack.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width - 0.5;
+        const y = (e.clientY - rect.top) / rect.height - 0.5;
+        depthStack.style.transform = `perspective(1200px) rotateY(${x * 12}deg) rotateX(${-y * 12}deg)`;
+      });
+      depthStack.addEventListener('mouseleave', () => {
+        depthStack.style.transform = 'perspective(1200px) rotateY(0deg) rotateX(0deg)';
+      });
+    }
+
+    // ==============================================
+    // 6. THREE.JS SCENE 1: HERO (Glowing Quantum Torus Knot & Star Dust)
+    // ==============================================
+    (function initHero3D() {
+      const container = document.getElementById('hero3d-container');
+      if (!container || typeof THREE === 'undefined') return;
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+      camera.position.z = 5.2;
+
+      const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+
+      // Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      scene.add(ambientLight);
+
+      const tealPointLight = new THREE.PointLight(0x00f5d4, 3, 20);
+      tealPointLight.position.set(4, 3, 4);
+      scene.add(tealPointLight);
+
+      const violetPointLight = new THREE.PointLight(0x7b2cbf, 3.5, 20);
+      violetPointLight.position.set(-4, -3, 3);
+      scene.add(violetPointLight);
+
+      // 3D Object: Quantum Torus Knot (SIYA's Ambient Singularity)
+      const knotGeo = new THREE.TorusKnotGeometry(1.4, 0.38, 128, 32, 2, 3);
+      const knotMat = new THREE.MeshStandardMaterial({
+        color: 0x050c18,
+        emissive: 0x00f5d4,
+        emissiveIntensity: 0.35,
+        roughness: 0.15,
+        metalness: 0.9,
+        wireframe: false,
+      });
+      const knotMesh = new THREE.Mesh(knotGeo, knotMat);
+      scene.add(knotMesh);
+
+      // Wireframe overlay for cyber elegance
+      const wireMat = new THREE.MeshBasicMaterial({
+        color: 0x7b2cbf,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.25
+      });
+      const wireMesh = new THREE.Mesh(knotGeo, wireMat);
+      knotMesh.add(wireMesh);
+
+      // Floating Particle Cloud
+      const particleCount = 180;
+      const particleGeo = new THREE.BufferGeometry();
+      const particlePositions = new Float32Array(particleCount * 3);
+      for (let i = 0; i < particleCount * 3; i += 3) {
+        particlePositions[i] = (Math.random() - 0.5) * 10;
+        particlePositions[i+1] = (Math.random() - 0.5) * 8;
+        particlePositions[i+2] = (Math.random() - 0.5) * 6;
+      }
+      particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+      const particleMat = new THREE.PointsMaterial({
+        color: 0x00f5d4,
+        size: 0.04,
+        transparent: true,
+        opacity: 0.6
+      });
+      const particleSystem = new THREE.Points(particleGeo, particleMat);
+      scene.add(particleSystem);
+
+      // Mouse & Scroll Reactivity
+      let mouseX = 0;
+      let mouseY = 0;
+      let targetX = 0;
+      let targetY = 0;
+      window.addEventListener('mousemove', (e) => {
+        mouseX = (e.clientX / window.innerWidth - 0.5) * 1.5;
+        mouseY = (e.clientY / window.innerHeight - 0.5) * 1.5;
+      });
+
+      // Pause render loop when off-screen
+      let isVisible = true;
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { isVisible = entry.isIntersecting; });
+      }, { threshold: 0.05 });
+      observer.observe(container);
+
+      // Animation Loop
+      function animate() {
+        requestAnimationFrame(animate);
+        if (!isVisible) return;
+
+        targetX += (mouseX - targetX) * 0.05;
+        targetY += (mouseY - targetY) * 0.05;
+
+        knotMesh.rotation.x += 0.006;
+        knotMesh.rotation.y += 0.009;
+        knotMesh.rotation.z += 0.003;
+
+        knotMesh.position.x = targetX * 1.2;
+        knotMesh.position.y = -targetY * 1.2;
+
+        particleSystem.rotation.y -= 0.001;
+
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      // Handle Resize
+      window.addEventListener('resize', () => {
+        if (!container) return;
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+      });
+    })();
+
+    // ==============================================
+    // 7. THREE.JS SCENE 2: FINAL CTA (Dynamic Wireframe Icosahedron Matrix)
+    // ==============================================
+    (function initCta3D() {
+      const container = document.getElementById('cta3d-container');
+      if (!container || typeof THREE === 'undefined') return;
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 100);
+      camera.position.z = 4.8;
+
+      const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+
+      // Lights
+      const light1 = new THREE.DirectionalLight(0x00f5d4, 2);
+      light1.position.set(3, 5, 4);
+      scene.add(light1);
+
+      const light2 = new THREE.DirectionalLight(0x8338ec, 2.5);
+      light2.position.set(-4, -4, 2);
+      scene.add(light2);
+
+      // Crystalline Polyhedron (SIYA Quantum Lattice)
+      const icoGeo = new THREE.IcosahedronGeometry(1.8, 1);
+      const icoMat = new THREE.MeshStandardMaterial({
+        color: 0x070b14,
+        emissive: 0x00b4d8,
+        emissiveIntensity: 0.4,
+        roughness: 0.2,
+        metalness: 0.95,
+        wireframe: true,
+      });
+      const icoMesh = new THREE.Mesh(icoGeo, icoMat);
+      scene.add(icoMesh);
+
+      // Inner Glowing Core Sphere
+      const innerGeo = new THREE.SphereGeometry(0.85, 32, 32);
+      const innerMat = new THREE.MeshBasicMaterial({
+        color: 0x00f5d4,
+        wireframe: false,
+        transparent: true,
+        opacity: 0.75
+      });
+      const innerMesh = new THREE.Mesh(innerGeo, innerMat);
+      icoMesh.add(innerMesh);
+
+      // Visibility Observer
+      let isVisible = true;
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { isVisible = entry.isIntersecting; });
+      }, { threshold: 0.05 });
+      observer.observe(container);
+
+      // Animation Loop
+      function animate() {
+        requestAnimationFrame(animate);
+        if (!isVisible) return;
+
+        icoMesh.rotation.x += 0.005;
+        icoMesh.rotation.y += 0.007;
+
+        // Subtle pulsing core
+        const scale = 0.85 + Math.sin(Date.now() * 0.003) * 0.08;
+        innerMesh.scale.set(scale, scale, scale);
+
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      window.addEventListener('resize', () => {
+        if (!container) return;
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+      });
+    })();
+
+    // ==============================================
+    // 8. GSAP SCROLLTRIGGER REVEALS (Ensuring 100% initial visibility safe)
+    // ==============================================
+    window.addEventListener('DOMContentLoaded', () => {
+      // Respect Reduced Motion
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReducedMotion || typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
+        return;
+      }
+
+      gsap.registerPlugin(ScrollTrigger);
+
+      // Safe, non-destructive stagger reveal for sections
+      const sections = ['#about', '#features', '#showcase', '#architecture', '#pricing'];
+      sections.forEach(secId => {
+        const el = document.querySelector(secId);
+        if (el) {
+          gsap.from(el.querySelectorAll('h2, .tilt-card, .flip-card'), {
+            scrollTrigger: {
+              trigger: el,
+              start: 'top 80%',
+              once: true
+            },
+            y: 35,
+            duration: 0.8,
+            stagger: 0.12,
+            ease: 'power3.out',
+            immediateRender: false
+          });
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>
